@@ -113,23 +113,27 @@ class TimeBasedOneTimePasswordUtil {
     * @return True if the authNumber matched the calculated number within the specified window.
     */
   def validateCurrentNumber(base32Secret: String, authNumber: Int, windowMillis: Int, timeMillis: Long, timeStepSeconds: Int): Boolean = {
-    var from = timeMillis
-    var to = timeMillis
-    if (windowMillis > 0) {
-      from -= windowMillis
-      to += windowMillis
-    }
-    val timeStepMillis = timeStepSeconds * 1000
-    var millis = from
-    while ( {
-      millis <= to
-    }) {
-      val compare = generateNumber(base32Secret, millis, timeStepSeconds)
-      if (compare == authNumber) return true
 
-      millis += timeStepMillis
+    val (from, to) = if (windowMillis > 0) {
+      (timeMillis - windowMillis, timeMillis + windowMillis)
+    } else {
+      (timeMillis, timeMillis)
     }
-    false
+
+    val timeStepMillis = timeStepSeconds * 1000
+    def compare(millis: Long): Boolean = {
+      val rndnum = generateNumber(base32Secret, millis, timeStepSeconds)
+      if (millis <= to) {
+        if (rndnum == authNumber) {
+          true
+        } else {
+          compare(millis + timeStepMillis)
+        }
+      } else {
+        false
+      }
+    }
+    compare(from)
   }
 
   /**
