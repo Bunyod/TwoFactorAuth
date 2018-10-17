@@ -1,5 +1,4 @@
-# This is Scala implementation of [two-factor-auth](https://github.com/j256/two-factor-auth)
- 
+
 Two (2) Factor Authentication (2FA) Scala Code
 =============================================
 
