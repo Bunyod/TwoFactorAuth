@@ -1,8 +1,6 @@
 package com.bunyod.twofactorauth
 
 import java.security.SecureRandom
-import java.util
-
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
@@ -44,8 +42,6 @@ object TOTP {
 
   /** Set to the number of digits to control 0 prefix, set to 0 for no prefix */
   private val NumDigitsOutput = 6
-
-  private val blockOfZeros: String = Array.fill(NumDigitsOutput)('0').mkString
 
   /** Generate and return a 16-character secret key in base32 format (A-Z2-7)
     * using SecureRandom.
@@ -176,14 +172,13 @@ object TOTP {
     *         output.
     */
   def generateNumber(base32Secret: String, timeMillis: Long, timeStepSeconds: Int): Long = {
-    val key: Array[Byte] = decodeBase32(base32Secret)
+    val key: Array[Byte] = Base32.decodeBase32(base32Secret)
     val value = timeMillis / 1000 / timeStepSeconds
 
     def fillData(value: Long, counter: Int, data: Array[Byte]): Array[Byte] = {
       if (value > 0 && counter > 0) {
-        var dt = data
-        dt(counter) = (value & 0xFF).toByte
-        fillData( value >> 8, counter - 1, dt)
+        data(counter) = (value & 0xFF).toByte
+        fillData( value >> 8, counter - 1, data)
       } else data
     }
 
@@ -254,94 +249,4 @@ object TOTP {
     }
   }
 
-  /**
-    * Decode base-32 method. I didn't want to add a dependency to Apache Codec just for this decode method. Exposed for
-    * testing.
-    */
-
-  // TODO refactor
-  def decodeBase32(str: String): Array[Byte] = {
-    val numBytes: Int = ((str.length * 5) + 7) / 8
-    var result: Array[Byte] = Array.ofDim[Byte](numBytes)
-    var resultIndex: Int = 0
-    var which: Int = 0
-    var working: Int = 0
-    for (i <- // each base-32 character encodes 5 bits
-           0 until str.length) {
-      val ch: Char = str.charAt(i)
-      var value: Int = 0
-      if (ch >= 'a' && ch <= 'z') {
-        value = ch - 'a'
-      } else if (ch >= 'A' && ch <= 'Z') {
-        value = ch - 'A'
-      } else if (ch >= '2' && ch <= '7') {
-        value = 26 + (ch - '2')
-      } else if (ch == '=') {
-        // special case
-        which = 0
-        //break
-      } else {
-        throw new IllegalArgumentException("Invalid base-32 character: " + ch)
-      }
-      /*
-			 * There are probably better ways to do this but this seemed the most straightforward.
-			 */
-
-      which match {
-        case 0 =>
-          // all 5 bits is top 5 bits
-          working = (value & 0x1F) << 3
-          which = 1
-        case 1 =>
-          // top 3 bits is lower 3 bits
-          working |= (value & 0x1C) >> 2
-          result({ resultIndex += 1; resultIndex - 1 }) = working.toByte
-          // lower 2 bits is upper 2 bits
-          working = (value & 0x03) << 6
-          which = 2
-        case 2 =>
-          // all 5 bits is mid 5 bits
-          working |= (value & 0x1F) << 1
-          which = 3
-        case 3 =>
-          // top 1 bit is lowest 1 bit
-          working |= (value & 0x10) >> 4
-          result({ resultIndex += 1; resultIndex - 1 }) = working.toByte
-          // lower 4 bits is top 4 bits
-          working = (value & 0x0F) << 4
-          which = 4
-        case 4 =>
-          // top 4 bits is lowest 4 bits
-          working |= (value & 0x1E) >> 1
-          result({ resultIndex += 1; resultIndex - 1 }) = working.toByte
-          // lower 1 bit is top 1 bit
-          working = (value & 0x01) << 7
-          which = 5
-        case 5 =>
-          // all 5 bits is mid 5 bits
-          working |= (value & 0x1F) << 2
-          which = 6
-        case 6 =>
-          // top 2 bits is lowest 2 bits
-          working |= (value & 0x18) >> 3
-          result({ resultIndex += 1; resultIndex - 1 }) = working.toByte
-          // lower 3 bits of byte 6 is top 3 bits
-          working = (value & 0x07) << 5
-          which = 7
-        case 7 =>
-          // all 5 bits is lower 5 bits
-          working |= (value & 0x1F)
-          result({ resultIndex += 1; resultIndex - 1 }) = working.toByte
-          which = 0
-
-      }
-    }
-    if (which != 0) {
-      result({ resultIndex += 1; resultIndex - 1 }) = working.toByte
-    }
-    if (resultIndex != result.length) {
-      result = util.Arrays.copyOf(result, resultIndex)
-    }
-    result
-  }
 }
