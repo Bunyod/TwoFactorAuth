@@ -28,6 +28,9 @@ import javax.crypto.spec.SecretKeySpec
   * </ol>
   *
   * <p>
+  * Scala implementation by bunyod: https://github.com/Bunyod/TwoFactorAuth
+  * </p>
+  * <p>
   * Java implementation by graywatson: https://github.com/j256/two-factor-auth
   * </p>
   *

@@ -1,7 +1,5 @@
 package com.bunyod.twofactorauth
 
-import java.util
-
 object Base32 {
   /** Take string, convert to byte array, break into 5 bit groups,
     * and encode each group as a character. (Due to left padding it seems
@@ -35,10 +33,8 @@ object Base32 {
 
 
   /**
-    * Decode base-32 method. I didn't want to add a dependency to Apache Codec just for this decode method. Exposed for
-    * testing.
+    * Decode base-32 method.
     */
-
   def decodeBase32(str: String): List[Byte] = {
 
     case class Dec(which: Int, working: Int, result: List[Byte])
