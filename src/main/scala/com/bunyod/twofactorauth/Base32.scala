@@ -39,89 +39,69 @@ object Base32 {
     * testing.
     */
 
-  // TODO refactor
-  def decodeBase32(str: String): Array[Byte] = {
-    val numBytes: Int = ((str.length * 5) + 7) / 8
-    var result: Array[Byte] = Array.ofDim[Byte](numBytes)
-    var resultIndex: Int = 0
-    var which: Int = 0
-    var working: Int = 0
-    for (i <- // each base-32 character encodes 5 bits
-           0 until str.length) {
-      val ch: Char = str.charAt(i)
-      var value: Int = 0
-      if (ch >= 'a' && ch <= 'z') {
-        value = ch - 'a'
-      } else if (ch >= 'A' && ch <= 'Z') {
-        value = ch - 'A'
-      } else if (ch >= '2' && ch <= '7') {
-        value = 26 + (ch - '2')
-      } else if (ch == '=') {
-        // special case
-        which = 0
-        //break
+  def decodeBase32(str: String): List[Byte] = {
+
+    case class Dec(which: Int, working: Int, result: List[Byte])
+
+    def go(counter: Int, dec: Dec): Dec = {
+      if (counter < str.length) {
+        val ch: Char = str.charAt(counter)
+        val value: Int = if (ch >= 'a' && ch <= 'z') {
+          ch - 'a'
+        } else if (ch >= 'A' && ch <= 'Z') {
+          ch - 'A'
+        } else if (ch >= '2' && ch <= '7') {
+          26 + (ch - '2')
+        } else {
+          throw new IllegalArgumentException("Invalid base-32 character: " + ch)
+        }
+
+        if (ch == '=') {
+          dec
+        } else {
+          dec.which match {
+            case 0 =>
+              go(counter + 1, dec.copy(which = 1, working = (value & 0x1F) << 3))
+            case 1 =>
+              val wk = dec.working | (value & 0x1C) >> 2
+              go(counter + 1, dec.copy(2, (value & 0x03) << 6, dec.result :+ wk.toByte))
+            case 2 =>
+              val wk = dec.working | (value & 0x1F) << 1
+              go(counter + 1, dec.copy(3, working = wk))
+            case 3 =>
+              val wk = dec.working | (value & 0x10) >> 4
+              go(counter + 1, dec.copy(4, (value & 0x0F) << 4, dec.result :+ wk.toByte))
+            case 4 =>
+              val wk = dec.working | (value & 0x1E) >> 1
+              go(counter + 1, dec.copy(5, (value & 0x01) << 7, dec.result :+ wk.toByte))
+            case 5 =>
+              val wk = dec.working | (value & 0x1F) << 2
+              go(counter + 1, dec.copy(6, wk))
+            case 6 =>
+              val wk = dec.working | (value & 0x18) >> 3
+              go(counter + 1, dec.copy(7, (value & 0x07) << 5, dec.result :+ wk.toByte))
+            case 7 =>
+              val wk = dec.working | (value & 0x1F)
+              go(counter + 1, dec.copy(0, wk, dec.result :+ wk.toByte))
+          }
+        }
+
       } else {
-        throw new IllegalArgumentException("Invalid base-32 character: " + ch)
-      }
-      /*
-			 * There are probably better ways to do this but this seemed the most straightforward.
-			 */
-
-      which match {
-        case 0 =>
-          // all 5 bits is top 5 bits
-          working = (value & 0x1F) << 3
-          which = 1
-        case 1 =>
-          // top 3 bits is lower 3 bits
-          working |= (value & 0x1C) >> 2
-          result({ resultIndex += 1; resultIndex - 1 }) = working.toByte
-          // lower 2 bits is upper 2 bits
-          working = (value & 0x03) << 6
-          which = 2
-        case 2 =>
-          // all 5 bits is mid 5 bits
-          working |= (value & 0x1F) << 1
-          which = 3
-        case 3 =>
-          // top 1 bit is lowest 1 bit
-          working |= (value & 0x10) >> 4
-          result({ resultIndex += 1; resultIndex - 1 }) = working.toByte
-          // lower 4 bits is top 4 bits
-          working = (value & 0x0F) << 4
-          which = 4
-        case 4 =>
-          // top 4 bits is lowest 4 bits
-          working |= (value & 0x1E) >> 1
-          result({ resultIndex += 1; resultIndex - 1 }) = working.toByte
-          // lower 1 bit is top 1 bit
-          working = (value & 0x01) << 7
-          which = 5
-        case 5 =>
-          // all 5 bits is mid 5 bits
-          working |= (value & 0x1F) << 2
-          which = 6
-        case 6 =>
-          // top 2 bits is lowest 2 bits
-          working |= (value & 0x18) >> 3
-          result({ resultIndex += 1; resultIndex - 1 }) = working.toByte
-          // lower 3 bits of byte 6 is top 3 bits
-          working = (value & 0x07) << 5
-          which = 7
-        case 7 =>
-          // all 5 bits is lower 5 bits
-          working |= (value & 0x1F)
-          result({ resultIndex += 1; resultIndex - 1 }) = working.toByte
-          which = 0
-
+        dec
       }
     }
+
+    val dec = go(0, Dec(0, 0, List.empty[Byte]))
+    val (which, working, result) = Dec.unapply(dec).getOrElse(0, 0, Nil)
+
+    val numBytes: Int = ((str.length * 5) + 7) / 8
+
     if (which != 0) {
-      result({ resultIndex += 1; resultIndex - 1 }) = working.toByte
+      result :+ working.toByte
+    } else if (result.size != numBytes) {
+      result ++ List.fill(numBytes - result.size)("".toByte)
+    } else {
+      result
     }
-    if (resultIndex != result.length) {
-      result = util.Arrays.copyOf(result, resultIndex)
-    }
-    result
   }
 }

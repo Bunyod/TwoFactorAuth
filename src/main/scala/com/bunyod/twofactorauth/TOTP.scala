@@ -172,7 +172,7 @@ object TOTP {
     *         output.
     */
   def generateNumber(base32Secret: String, timeMillis: Long, timeStepSeconds: Int): Long = {
-    val key: Array[Byte] = Base32.decodeBase32(base32Secret)
+    val key: Array[Byte] = Base32.decodeBase32(base32Secret).toArray
     val value = timeMillis / 1000 / timeStepSeconds
 
     def fillData(value: Long, counter: Int, data: Array[Byte]): Array[Byte] = {

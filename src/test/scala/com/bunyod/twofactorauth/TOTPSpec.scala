@@ -15,16 +15,22 @@ class TOTPSpec extends AsyncWordSpec with Matchers {
         assert(TOTP.generateNumber(secret, 7451000L, TOTP.DefaultTimeStepSeconds) == 325893)
         assert(TOTP.generateNumberString(secret, 15451000L, TOTP.DefaultTimeStepSeconds) == "064088")
         assert(TOTP.generateNumber(secret, 15451000L, TOTP.DefaultTimeStepSeconds) == 64088)
-        //    testStringAndNumber(secret, 348402049542546145L, 9637, "009637")
-        //    testStringAndNumber(secret, 2049455124374752571L, 743, "000743")
-        //    testStringAndNumber(secret, 1359002349304873750L, 92, "000092")
-        //    testStringAndNumber(secret, 6344447817348357059L, 7, "000007")
-        //    testStringAndNumber(secret, 2125701285964551130L, 0, "000000")
+        assert(TOTP.generateNumberString(secret, 348402049542546145L,  TOTP.DefaultTimeStepSeconds) == "009637")
+        assert(TOTP.generateNumber(secret, 348402049542546145L,  TOTP.DefaultTimeStepSeconds) == 9637)
+        assert(TOTP.generateNumberString(secret, 2049455124374752571L, TOTP.DefaultTimeStepSeconds) == "000743")
+        assert(TOTP.generateNumber(secret, 2049455124374752571L, TOTP.DefaultTimeStepSeconds) == 743)
+        assert(TOTP.generateNumberString(secret, 1359002349304873750L, TOTP.DefaultTimeStepSeconds) == "000092")
+        assert(TOTP.generateNumber(secret, 1359002349304873750L, TOTP.DefaultTimeStepSeconds) ==  92)
+        assert(TOTP.generateNumberString(secret, 6344447817348357059L, TOTP.DefaultTimeStepSeconds) == "000007")
+        assert(TOTP.generateNumber(secret, 6344447817348357059L, TOTP.DefaultTimeStepSeconds) ==  7)
+        assert(TOTP.generateNumberString(secret, 2125701285964551130L, TOTP.DefaultTimeStepSeconds) == "000000")
+        assert(TOTP.generateNumber(secret, 2125701285964551130L, TOTP.DefaultTimeStepSeconds) == 0)
       }
     }
   }
-  private def testStringAndNumber(secret: String, timeMillis: Long, expectedNumber: Long, expectedString: String): Unit = {
-    assert(expectedString == TOTP.generateNumberString(secret, timeMillis, TOTP.DefaultTimeStepSeconds))
-    assert(expectedNumber == TOTP.generateNumber(secret, timeMillis, TOTP.DefaultTimeStepSeconds))
-  }
+
+//  private def testStringAndNumber(secret: String, timeMillis: Long, expectedNumber: Long, expectedString: String): Unit = {
+//    assert(expectedString == TOTP.generateNumberString(secret, timeMillis, TOTP.DefaultTimeStepSeconds))
+//    assert(expectedNumber == TOTP.generateNumber(secret, timeMillis, TOTP.DefaultTimeStepSeconds))
+//  }
 }
