@@ -26,6 +26,6 @@ You can use this code with the Google Authenticator mobile app or the Authy mobi
 
 <!--- For more details, see the [example program](https://github.com/j256/two-factor-auth/blob/master/src/test/java/com/j256/twofactorauth/TwoFactorAuthExample.java). --->
 
-# ChangeLog Release Notes
+<!--- # ChangeLog Release Notes --->
 
 <!--- See the [ChangeLog.txt file](src/main/javadoc/doc-files/changelog.txt). --->
